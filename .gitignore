@@ -1,0 +1,22 @@
+# Node
+node_modules/
+
+# Build (main.js is committed for releases)
+# main.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test vault
+test-vault/
