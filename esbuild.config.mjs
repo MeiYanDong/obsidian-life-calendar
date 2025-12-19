@@ -3,7 +3,7 @@ import process from "process";
 import builtins from "builtin-modules";
 
 const banner = `/*
-日迹 DayTrace - 生命日历可视化 Obsidian 插件
+Life Calendar - 人生日历可视化 Obsidian 插件
 */
 `;
 

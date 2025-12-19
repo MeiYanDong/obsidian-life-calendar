@@ -12,7 +12,7 @@ import {
 
 // ============ 类型定义 ============
 
-interface DayTraceSettings {
+interface LifeCalendarSettings {
   birthDate: string;
   lifeExpectancy: number;
   dailyNotesFolder: string;
@@ -27,7 +27,7 @@ interface DayData {
   special?: boolean;
 }
 
-const DEFAULT_SETTINGS: DayTraceSettings = {
+const DEFAULT_SETTINGS: LifeCalendarSettings = {
   birthDate: "2000-01-01",
   lifeExpectancy: 90,
   dailyNotesFolder: "",
@@ -42,35 +42,35 @@ const DEFAULT_SETTINGS: DayTraceSettings = {
   },
 };
 
-const VIEW_TYPE_DAYTRACE = "daytrace-view";
+const VIEW_TYPE_LIFE_CALENDAR = "life-calendar-view";
 
 // ============ 主插件类 ============
 
-export default class DayTracePlugin extends Plugin {
-  settings: DayTraceSettings;
+export default class LifeCalendarPlugin extends Plugin {
+  settings: LifeCalendarSettings;
 
   async onload() {
     await this.loadSettings();
 
     // 注册视图
-    this.registerView(VIEW_TYPE_DAYTRACE, (leaf) => new DayTraceView(leaf, this));
+    this.registerView(VIEW_TYPE_LIFE_CALENDAR, (leaf) => new LifeCalendarView(leaf, this));
 
     // 添加侧边栏图标
-    this.addRibbonIcon("calendar-days", "日迹 DayTrace", () => {
+    this.addRibbonIcon("calendar-days", "Life Calendar", () => {
       this.activateView();
     });
 
     // 添加命令
     this.addCommand({
-      id: "open-daytrace",
-      name: "打开日迹人生日历",
+      id: "open-life-calendar",
+      name: "打开人生日历",
       callback: () => {
         this.activateView();
       },
     });
 
     // 添加设置页
-    this.addSettingTab(new DayTraceSettingTab(this.app, this));
+    this.addSettingTab(new LifeCalendarSettingTab(this.app, this));
   }
 
   onunload() {}
@@ -82,8 +82,8 @@ export default class DayTracePlugin extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
     // 刷新视图
-    this.app.workspace.getLeavesOfType(VIEW_TYPE_DAYTRACE).forEach((leaf) => {
-      if (leaf.view instanceof DayTraceView) {
+    this.app.workspace.getLeavesOfType(VIEW_TYPE_LIFE_CALENDAR).forEach((leaf) => {
+      if (leaf.view instanceof LifeCalendarView) {
         leaf.view.refresh();
       }
     });
@@ -93,13 +93,13 @@ export default class DayTracePlugin extends Plugin {
     const { workspace } = this.app;
 
     let leaf: WorkspaceLeaf | null = null;
-    const leaves = workspace.getLeavesOfType(VIEW_TYPE_DAYTRACE);
+    const leaves = workspace.getLeavesOfType(VIEW_TYPE_LIFE_CALENDAR);
 
     if (leaves.length > 0) {
       leaf = leaves[0];
     } else {
       leaf = workspace.getRightLeaf(false);
-      await leaf?.setViewState({ type: VIEW_TYPE_DAYTRACE, active: true });
+      await leaf?.setViewState({ type: VIEW_TYPE_LIFE_CALENDAR, active: true });
     }
 
     if (leaf) {
@@ -110,22 +110,22 @@ export default class DayTracePlugin extends Plugin {
 
 // ============ 日历视图 ============
 
-class DayTraceView extends ItemView {
-  plugin: DayTracePlugin;
+class LifeCalendarView extends ItemView {
+  plugin: LifeCalendarPlugin;
   dayDataMap: Map<string, DayData> = new Map();
   private calendarWrapper: HTMLElement | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: DayTracePlugin) {
+  constructor(leaf: WorkspaceLeaf, plugin: LifeCalendarPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
 
   getViewType() {
-    return VIEW_TYPE_DAYTRACE;
+    return VIEW_TYPE_LIFE_CALENDAR;
   }
 
   getDisplayText() {
-    return "日迹";
+    return "Life Calendar";
   }
 
   getIcon() {
@@ -482,10 +482,10 @@ date: ${dateStr}
 
 // ============ 设置页 ============
 
-class DayTraceSettingTab extends PluginSettingTab {
-  plugin: DayTracePlugin;
+class LifeCalendarSettingTab extends PluginSettingTab {
+  plugin: LifeCalendarPlugin;
 
-  constructor(app: App, plugin: DayTracePlugin) {
+  constructor(app: App, plugin: LifeCalendarPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -494,7 +494,7 @@ class DayTraceSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "日迹 DayTrace 设置" });
+    containerEl.createEl("h2", { text: "Life Calendar 设置" });
 
     // 出生日期
     new Setting(containerEl)

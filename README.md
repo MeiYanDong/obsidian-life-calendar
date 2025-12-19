@@ -1,4 +1,4 @@
-# 日迹 DayTrace - Obsidian 插件
+# Life Calendar - Obsidian 插件
 
 人生日历可视化插件 - 用格子可视化你的一生，每一天都是一个彩色方块。
 
@@ -16,10 +16,10 @@
 ### 手动安装
 
 1. 下载 `main.js`、`manifest.json`、`styles.css`
-2. 在 Obsidian 库中创建 `.obsidian/plugins/daytrace/` 文件夹
+2. 在 Obsidian 库中创建 `.obsidian/plugins/life-calendar/` 文件夹
 3. 将下载的文件复制到该文件夹
 4. 重启 Obsidian
-5. 在设置 → 第三方插件中启用「日迹 DayTrace」
+5. 在设置 → 第三方插件中启用「Life Calendar」
 
 ### 从源码构建
 
@@ -31,7 +31,7 @@ npm run build
 
 ## 使用
 
-1. 点击左侧边栏的日历图标，或使用命令面板搜索「日迹」
+1. 点击左侧边栏的日历图标，或使用命令面板搜索「Life Calendar」
 2. 在设置中配置：
    - **出生日期**：用于计算年龄
    - **预期寿命**：日历显示的年数

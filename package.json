@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-daytrace",
+  "name": "obsidian-life-calendar",
   "version": "1.0.0",
-  "description": "日迹 DayTrace - 人生日历可视化 Obsidian 插件",
+  "description": "Life Calendar - 人生日历可视化 Obsidian 插件",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",

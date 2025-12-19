@@ -1,10 +1,10 @@
 {
-  "id": "daytrace",
-  "name": "日迹 DayTrace",
+  "id": "life-calendar",
+  "name": "Life Calendar",
   "version": "1.0.0",
   "minAppVersion": "1.0.0",
   "description": "人生日历可视化 - 用格子可视化你的一生，每一天都是一个彩色方块",
   "author": "梅炎栋",
-  "authorUrl": "https://github.com/MeiYanDong/daytrace",
+  "authorUrl": "https://github.com/MeiYanDong/obsidian-life-calendar",
   "isDesktopOnly": false
 }
