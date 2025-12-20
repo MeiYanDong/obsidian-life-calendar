@@ -17,6 +17,8 @@ interface LifeCalendarSettings {
   lifeExpectancy: number;
   dailyNotesFolder: string;
   palette: Record<string, string>;
+  intensityLevels: number;
+  intensityOpacities: number[];
 }
 
 interface DayData {
@@ -25,6 +27,7 @@ interface DayData {
   color?: string;
   colorKey?: string;
   special?: boolean;
+  intensity?: number;
 }
 
 const DEFAULT_SETTINGS: LifeCalendarSettings = {
@@ -40,6 +43,8 @@ const DEFAULT_SETTINGS: LifeCalendarSettings = {
     纪念日: "#6366F1",
     庆祝: "#EC4899",
   },
+  intensityLevels: 5,
+  intensityOpacities: [0.2, 0.4, 0.6, 0.8, 1.0],
 };
 
 const VIEW_TYPE_LIFE_CALENDAR = "life-calendar-view";
@@ -77,6 +82,13 @@ export default class LifeCalendarPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    // 迁移检查：确保老用户有默认的精彩程度设置
+    if (!this.settings.intensityLevels) {
+      this.settings.intensityLevels = 5;
+    }
+    if (!this.settings.intensityOpacities?.length) {
+      this.settings.intensityOpacities = [0.2, 0.4, 0.6, 0.8, 1.0];
+    }
   }
 
   async saveSettings() {
@@ -202,6 +214,7 @@ class LifeCalendarView extends ItemView {
     let colorKey: string | undefined;
     let color: string | undefined;
     let special: boolean | undefined;
+    let intensity: number | undefined;
 
     if (lifeCalendar) {
       if (typeof lifeCalendar === 'string') {
@@ -216,12 +229,19 @@ class LifeCalendarView extends ItemView {
       }
     }
 
+    // 解析独立的精彩程度属性
+    const lifeCalendarIntensity = frontMatter?.lifeCalendarIntensity;
+    if (typeof lifeCalendarIntensity === 'number') {
+      intensity = lifeCalendarIntensity;
+    }
+
     return {
       date,
       file,
       color,
       colorKey,
       special,
+      intensity,
     };
   }
 
@@ -235,6 +255,27 @@ class LifeCalendarView extends ItemView {
     } catch {
       return null;
     }
+  }
+
+  // 混合两个 HEX 颜色
+  blendColors(color1: string, color2: string, ratio: number): string {
+    const hex1 = color1.replace('#', '');
+    const hex2 = color2.replace('#', '');
+
+    const r1 = parseInt(hex1.substring(0, 2), 16);
+    const g1 = parseInt(hex1.substring(2, 4), 16);
+    const b1 = parseInt(hex1.substring(4, 6), 16);
+
+    const r2 = parseInt(hex2.substring(0, 2), 16);
+    const g2 = parseInt(hex2.substring(2, 4), 16);
+    const b2 = parseInt(hex2.substring(4, 6), 16);
+
+    // ratio: 0 = color1, 1 = color2
+    const r = Math.round(r1 + (r2 - r1) * ratio);
+    const g = Math.round(g1 + (g2 - g1) * ratio);
+    const b = Math.round(b1 + (b2 - b1) * ratio);
+
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   // 加载所有日数据
@@ -395,16 +436,28 @@ class LifeCalendarView extends ItemView {
           if (dayData) {
             cell.addClass("has-note");
 
-            // 设置颜色
-            let color = settings.palette["默认"];
+            // 确定特殊色
+            let specialColor = settings.palette["默认"];
             if (dayData.color) {
-              color = dayData.color;
+              specialColor = dayData.color;
             } else if (dayData.colorKey && settings.palette[dayData.colorKey]) {
-              color = settings.palette[dayData.colorKey];
+              specialColor = settings.palette[dayData.colorKey];
             }
-            cell.style.backgroundColor = color;
 
-            if (dayData.special) {
+            // 计算混合比例
+            let ratio = 1.0; // 默认使用特殊色
+            if (dayData.intensity !== undefined) {
+              const level = Math.max(1, Math.min(dayData.intensity, settings.intensityLevels));
+              ratio = settings.intensityOpacities[level - 1] ?? 1.0;
+            }
+
+            // 从默认色到特殊色的渐变
+            const defaultColor = settings.palette["默认"];
+            const finalColor = this.blendColors(defaultColor, specialColor, ratio);
+            cell.style.backgroundColor = finalColor;
+
+            // lifeCalendar 存在即视为特殊日子
+            if (dayData.colorKey || dayData.color || dayData.special) {
               cell.addClass("special");
             }
           } else {
@@ -590,5 +643,46 @@ class LifeCalendarSettingTab extends PluginSettingTab {
           }
         })
       );
+
+    // 精彩程度设置
+    containerEl.createEl("h3", { text: "精彩程度" });
+
+    // 程度级数滑块
+    new Setting(containerEl)
+      .setName("程度梯度数量")
+      .setDesc("精彩程度的级别数量（默认 5）")
+      .addSlider((slider) =>
+        slider
+          .setLimits(2, 10, 1)
+          .setValue(this.plugin.settings.intensityLevels)
+          .setDynamicTooltip()
+          .onChange(async (value) => {
+            this.plugin.settings.intensityLevels = value;
+            // 重新生成默认不透明度
+            this.plugin.settings.intensityOpacities = Array.from(
+              { length: value },
+              (_, i) => (i + 1) / value
+            );
+            await this.plugin.saveSettings();
+            this.display();
+          })
+      );
+
+    // 各级不透明度设置
+    for (let i = 1; i <= this.plugin.settings.intensityLevels; i++) {
+      new Setting(containerEl)
+        .setName(`级别 ${i}`)
+        .setDesc(`精彩程度 ${i} 的不透明度`)
+        .addSlider((slider) =>
+          slider
+            .setLimits(0, 100, 5)
+            .setValue((this.plugin.settings.intensityOpacities[i - 1] ?? (i / this.plugin.settings.intensityLevels)) * 100)
+            .setDynamicTooltip()
+            .onChange(async (value) => {
+              this.plugin.settings.intensityOpacities[i - 1] = value / 100;
+              await this.plugin.saveSettings();
+            })
+        );
+    }
   }
 }
